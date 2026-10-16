@@ -16,7 +16,12 @@ use exface\Core\Factories\DataSheetFactory;
 use exface\Core\DataTypes\SortingDirectionsDataType;
 use exface\Core\DataTypes\ComparatorDataType;
 use exface\Core\Interfaces\UxonSchemaInterface;
+use exface\Core\Mutations\MetaObjectUidMutationTarget;
+use exface\Core\Mutations\MutationPoints\ObjectActionMutationPoint;
+use exface\Core\Mutations\Prototypes\GenericUxonMutation;
+use exface\Core\CommonLogic\Utils\JsonObject;
 use exface\Core\Uxon\QueryBuilderSchema;
+use JsonPath\InvalidJsonPathException;
 
 /**
  * Returns autosuggest values for provided UXON objects.
@@ -30,6 +35,7 @@ use exface\Core\Uxon\QueryBuilderSchema;
  * - `schema` - the UXON schema to be used (if not set, the generic UxonSchema will be used).
  * - `prototype` - class or file path (relative to the vendor folder) to be used as prototype
  * - `object` - a selector for the root object of the UXON
+ * - `target_uid` - UID of an object action when `input` is `mutation_hints`
  * 
  * The result is a JSON with the following structure
  * 
@@ -48,6 +54,9 @@ use exface\Core\Uxon\QueryBuilderSchema;
  * 
  * ```
  * 
+ * With `input` set to `mutation_hints`, the result is a list of enabled mutations with their
+ * operation, configured JSONPath and concrete JSONEditor path.
+ *
  * @author Andrej Kabachnik
  *
  */
@@ -63,14 +72,19 @@ class UxonAutosuggest extends AbstractAction
     const TYPE_PRESET = 'preset';
     const TYPE_DETAILS = 'details';
     const TYPE_MODEL_BROWSER = 'modelbrowser';
+    const TYPE_MUTATION_HINTS = 'mutation_hints';
     
     protected function perform(TaskInterface $task, DataTransactionInterface $transaction) : ResultInterface
     {
+        $type = $task->getParameter(self::PARAM_TYPE);
+        if (strcasecmp($type, self::TYPE_MUTATION_HINTS) === 0) {
+            return ResultFactory::createJSONResult($task, $this->suggestMutationHints($task));
+        }
+
         $schemaBase = new UxonObject();
         
         $currentText = $task->getParameter(self::PARAM_TEXT);
         $path = $this->getParamPath($task);
-        $type = $task->getParameter(self::PARAM_TYPE);
         $uxon = $this->getParamUxon($task);
         $rootObject = $this->getRootObject($task);
         
@@ -104,6 +118,122 @@ class UxonAutosuggest extends AbstractAction
                 break;
         }
         return ResultFactory::createJSONResult($task, $options);
+    }
+
+    /**
+     * Returns the enabled object-action mutations and their concrete target paths in the current UXON.
+     *
+     * @param TaskInterface $task
+     * @return array
+     */
+    protected function suggestMutationHints(TaskInterface $task) : array
+    {
+        $targetUid = trim((string) $task->getParameter('target_uid'));
+        if ($targetUid === '') {
+            return [];
+        }
+
+        $mutationPoint = $this->getWorkbench()->getMutator()->getMutationPoint(ObjectActionMutationPoint::class);
+        if ($mutationPoint->isDisabled()) {
+            return [];
+        }
+
+        $target = new MetaObjectUidMutationTarget('exface.Core.OBJECT_ACTION', $targetUid);
+        $uxon = $this->getParamUxon($task);
+        $hints = [];
+        foreach ($mutationPoint->getMutations($target) as $mutation) {
+            if ($mutation->isDisabled() || ! ($mutation instanceof GenericUxonMutation)) {
+                continue;
+            }
+
+            $config = $mutation->exportUxonObject()->toArray();
+            foreach (['append', 'insert', 'change', 'replace'] as $operation) {
+                foreach (($config[$operation] ?? []) as $jsonPath => $_) {
+                    $hints = array_merge($hints, $this->createMutationHints(
+                        $uxon,
+                        $mutation->getName(),
+                        $operation,
+                        $jsonPath
+                    ));
+                }
+            }
+            foreach (($config['remove'] ?? []) as $jsonPath) {
+                $hints = array_merge($hints, $this->createMutationHints(
+                    $uxon,
+                    $mutation->getName(),
+                    'remove',
+                    $jsonPath
+                ));
+            }
+            foreach (($config['move'] ?? []) as $sourcePath => $targetPath) {
+                $hints = array_merge(
+                    $hints,
+                    $this->createMutationHints($uxon, $mutation->getName(), 'move', $sourcePath),
+                    $this->createMutationHints($uxon, $mutation->getName(), 'move', $targetPath)
+                );
+            }
+        }
+
+        return $hints;
+    }
+
+    /**
+     * Resolves one mutation JSONPath to JSONEditor-compatible path arrays.
+     *
+     * @param UxonObject $uxon
+     * @param string|null $mutationName
+     * @param string $operation
+     * @param string $jsonPath
+     * @return array
+     */
+    protected function createMutationHints(
+        UxonObject $uxon,
+        ?string $mutationName,
+        string $operation,
+        string $jsonPath
+    ) : array {
+        $json = new JsonObject($uxon->toArray());
+        $marker = ['__exf_mutation_target__' => uniqid('', true)];
+        try {
+            $json->set($jsonPath, $marker);
+        } catch (InvalidJsonPathException $e) {
+            $this->getWorkbench()->getLogger()->logException($e);
+            return [];
+        }
+
+        return array_map(
+            static fn(array $path) => [
+                'name' => $mutationName,
+                'operation' => $operation,
+                'json_path' => $jsonPath,
+                'path' => $path
+            ],
+            $this->findMutationMarkerPaths($json->getValue(), $marker)
+        );
+    }
+
+    /**
+     * Finds every occurrence of a temporary marker and returns its path from the UXON root.
+     *
+     * @param mixed $value
+     * @param array $marker
+     * @param array $path
+     * @return array
+     */
+    protected function findMutationMarkerPaths($value, array $marker, array $path = []) : array
+    {
+        if ($value === $marker) {
+            return [$path];
+        }
+        if (! is_array($value)) {
+            return [];
+        }
+
+        $paths = [];
+        foreach ($value as $key => $child) {
+            $paths = array_merge($paths, $this->findMutationMarkerPaths($child, $marker, array_merge($path, [$key])));
+        }
+        return $paths;
     }
 
     /**

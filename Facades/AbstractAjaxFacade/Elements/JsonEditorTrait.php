@@ -6,6 +6,9 @@ use exface\Core\Widgets\InputUxon;
 use exface\Core\Interfaces\WorkbenchInterface;
 use exface\Core\Factories\FacadeFactory;
 use exface\Core\Facades\DocsFacade;
+use exface\Core\Exceptions\Widgets\WidgetNotFoundError;
+use exface\Core\Factories\WidgetLinkFactory;
+use exface\Core\Interfaces\WidgetInterface;
 
 /**
  * This trait helps use the JsonEditor library to create InputJson and InputUxon widgets.
@@ -40,6 +43,9 @@ use exface\Core\Facades\DocsFacade;
 trait JsonEditorTrait
 {
     use JqueryInputValidationTrait;
+
+    /** @var WidgetInterface|false|null */
+    private $mutationHintsTargetWidget = false;
     
     protected function buildHtmlJsonEditor() : string
     {
@@ -157,6 +163,7 @@ JS;
                         });
                         var json = {$this::buildJsEditorGetter($uxonEditorId)}.get();
                         {$this::buildJsPresetHintTrigger("{$uxonEditorId}", 'json')}
+                        {$this->buildJsScheduleMutationHints()}
                     }, 0);
 
 JS;
@@ -259,6 +266,19 @@ JS;
      */
     protected function buildJsOnModeChangeFunction($uxonEditorId, $funcPrefix) : string
     {
+        $mutationHintsJs = '';
+        if ($this->hasMutationHints()) {
+            $mutationHintsJs = <<<JS
+
+            if (newMode === 'tree') {
+                setTimeout(function() {
+                    {$funcPrefix}_renderMutationHints(oEditor);
+                }, 10);
+            } else {
+                {$funcPrefix}_clearMutationHints(oEditor);
+            }
+JS;
+        }
         if (! $this->getWidget() instanceof InputUxon) {
             $script = '';
         } else {
@@ -281,6 +301,7 @@ JS;
                 oEditor.container.setDisabled();
             }, 10);
             $script
+            $mutationHintsJs
         }    
 
 JS;
@@ -327,6 +348,7 @@ JS;
         if ($this->getWidget() instanceof InputUxon) {
             $fn .= $this->buildJsPresetHintTrigger($this->getId(), 'json');
         }
+        $fn .= $this->buildJsScheduleMutationHints();
         return "function(json) { $fn }";
     }
 
@@ -337,6 +359,9 @@ JS;
      */
     protected function buildJsOnExpand() : string
     {
+        $mutationHintsJs = $this->hasMutationHints()
+            ? "{$this->buildJsFunctionPrefix()}_renderMutationHints(oEditor);"
+            : '';
         return <<<JS
 
 function (oEvent) {
@@ -354,6 +379,7 @@ function (oEvent) {
         var errorNodes = oEditor.__cachedErrors;
         {$this->buildJsToggleValidationErrors('errorNodes')}
     }
+    $mutationHintsJs
 }
 JS;
 
@@ -879,6 +905,7 @@ JS;
     }
     oEditor.setText(val); 
     oEditor.expandAll();
+    {$this->buildJsScheduleMutationHints()}
 })($value)
 JS;
     }
@@ -1077,6 +1104,41 @@ JS;
                     .uxoneditor-table p {margin: 0.3em 0 0.7em 0;}    
                     .uxoneditor-object-details-title {margin: 0.3em 0 0.7em 0;}
                     .uxoneditor-object-details-description {padding: 0.7em 0 0.7em 0; margin-bottom: 0.7em; border-width: 2px 0 2px 0; border-color: #3883fa; border-style: solid;} 
+                    .jsoneditor tr.uxoneditor-mutation-target > td:first-child {
+                        border-left: 3px dashed var(--uxon-mutation-color);
+                    }
+                    .jsoneditor tr.uxoneditor-mutation-hover > td {
+                        background-color: #fff4cc !important;
+                    }
+                    .uxoneditor-mutation-icons {
+                        position: absolute;
+                        right: 3px;
+                        top: 50%;
+                        transform: translateY(-50%);
+                        display: inline-flex;
+                        gap: 3px;
+                        z-index: 2;
+                    }
+                    .uxoneditor-mutation-icon {
+                        position: relative;
+                        color: var(--uxon-mutation-color);
+                        cursor: help;
+                    }
+                    .uxoneditor-mutation-icon:hover::after {
+                        content: attr(data-label);
+                        position: absolute;
+                        right: 0;
+                        bottom: calc(100% + 5px);
+                        white-space: nowrap;
+                        padding: 4px 7px;
+                        color: #fff;
+                        background: #333;
+                        border-radius: 3px;
+                        font-family: sans-serif;
+                        font-size: 12px;
+                        font-weight: normal;
+                        z-index: 10;
+                    }
 CSS;
     }
     
@@ -2255,8 +2317,12 @@ JS;
         $widget = $this->getWidget();
         $uxonEditorId = $this->getId();
         $funcPrefix = $this->buildJsFunctionPrefix();
-        if (($widget instanceof InputUxon) === false || $widget->getAutosuggest() === false) {
+        if (($widget instanceof InputUxon) === false) {
             return '';
+        }
+        $mutationHintsJs = $this->buildJsMutationHintsFunctions();
+        if ($widget->getAutosuggest() === false) {
+            return $mutationHintsJs;
         }
         
         return $this::buildJsUxonEditorFunctions(
@@ -2292,6 +2358,214 @@ JS;
                         $(document).on('blur', sEditableFieldsSelector, oEventData, {$funcPrefix}_onBlur);
                     }
             	});
+JS
+            .
+            $mutationHintsJs;
+    }
+
+    /**
+     * Returns TRUE for the object-action configuration editor supported by mutation hints.
+     *
+     * @return bool
+     */
+    protected function hasMutationHints() : bool
+    {
+        $widget = $this->getWidget();
+        $isActionConfig = $widget instanceof InputUxon
+            && $widget->isBoundToAttribute()
+            && $widget->getMetaObject()->isExactly('exface.Core.OBJECT_ACTION')
+            && strcasecmp($widget->getAttributeAlias(), 'CONFIG_UXON') === 0;
+        if (! $isActionConfig) {
+            return false;
+        }
+        return $this->getMutationHintsTargetWidget() !== null;
+    }
+
+    /**
+     * Returns the action UID widget from the editor's ID space without searching the entire page.
+     *
+     * @return WidgetInterface|null
+     */
+    protected function getMutationHintsTargetWidget() : ?WidgetInterface
+    {
+        if ($this->mutationHintsTargetWidget !== false) {
+            return $this->mutationHintsTargetWidget;
+        }
+        try {
+            $this->mutationHintsTargetWidget = WidgetLinkFactory::createFromWidget(
+                $this->getWidget(),
+                'action_uid_field'
+            )->getTargetWidget();
+        } catch (WidgetNotFoundError $e) {
+            $this->mutationHintsTargetWidget = null;
+        }
+        return $this->mutationHintsTargetWidget;
+    }
+
+    /**
+     * Schedules an asynchronous refresh of mutation hints when this editor supports them.
+     *
+     * @return string
+     */
+    protected function buildJsScheduleMutationHints() : string
+    {
+        if (! $this->hasMutationHints()) {
+            return '';
+        }
+        return "{$this->buildJsFunctionPrefix()}_scheduleMutationHints({$this::buildJsEditorGetter($this->getId())});";
+    }
+
+    /**
+     * Builds the client-side loader and renderer for object-action mutation hints.
+     *
+     * @return string
+     */
+    protected function buildJsMutationHintsFunctions() : string
+    {
+        if (! $this->hasMutationHints()) {
+            return '';
+        }
+
+        $funcPrefix = $this->buildJsFunctionPrefix();
+        $editorId = $this->getId();
+        $ajaxUrl = $this->getAjaxUrl();
+        $uidWidget = $this->getMutationHintsTargetWidget();
+        $targetUidJs = $this->getFacade()->getElement($uidWidget)->buildJsValueGetter();
+
+        return <<<JS
+
+        function {$funcPrefix}_clearMutationHints(oEditor) {
+            if (!oEditor || !oEditor.container) {
+                return;
+            }
+            oEditor.container.querySelectorAll('.uxoneditor-mutation-icons').forEach(function(oIcons) {
+                oIcons.remove();
+            });
+            oEditor.container.querySelectorAll('.uxoneditor-mutation-target, .uxoneditor-mutation-hover').forEach(function(oRow) {
+                oRow.classList.remove('uxoneditor-mutation-target', 'uxoneditor-mutation-hover');
+                oRow.style.removeProperty('--uxon-mutation-color');
+            });
+        }
+
+        function {$funcPrefix}_toggleMutationHighlight(oNode, bShow) {
+            if (!oNode) {
+                return;
+            }
+            if (oNode.dom && oNode.dom.tr) {
+                oNode.dom.tr.classList.toggle('uxoneditor-mutation-hover', bShow);
+            }
+            (oNode.childs || []).forEach(function(oChild) {
+                {$funcPrefix}_toggleMutationHighlight(oChild, bShow);
+            });
+        }
+
+        function {$funcPrefix}_renderMutationHints(oEditor) {
+            {$funcPrefix}_clearMutationHints(oEditor);
+            if (!oEditor || oEditor.getMode() !== 'tree' || !oEditor.node) {
+                return;
+            }
+
+            var aColors = ['#d9534f', '#337ab7', '#5cb85c', '#f0ad4e', '#8e44ad', '#008b8b'];
+            (oEditor._exfMutationHints || []).forEach(function(oHint, iHint) {
+                var aPath = oHint.path.slice();
+                var oNode = aPath.length === 0 ? oEditor.node : oEditor.node.findNodeByPath(aPath);
+                while (!oNode && aPath.length > 0) {
+                    aPath.pop();
+                    oNode = aPath.length === 0 ? oEditor.node : oEditor.node.findNodeByPath(aPath);
+                }
+                if (!oNode || !oNode.dom || !oNode.dom.tr) {
+                    return;
+                }
+
+                var sColor = aColors[iHint % aColors.length];
+                var oRow = oNode.dom.tr;
+                var oCell = oRow.lastElementChild;
+                var oIcons;
+                var oIcon;
+                if (!oCell) {
+                    return;
+                }
+
+                oRow.classList.add('uxoneditor-mutation-target');
+                oRow.style.setProperty('--uxon-mutation-color', sColor);
+                oCell.style.position = 'relative';
+                oIcons = oCell.querySelector('.uxoneditor-mutation-icons');
+                if (!oIcons) {
+                    oIcons = document.createElement('span');
+                    oIcons.className = 'uxoneditor-mutation-icons';
+                    oCell.appendChild(oIcons);
+                }
+
+                oIcon = document.createElement('i');
+                oIcon.className = 'fa fa-code-fork uxoneditor-mutation-icon';
+                oIcon.style.setProperty('--uxon-mutation-color', sColor);
+                oIcon.dataset.label = oHint.name || 'Mutation';
+                oIcon.title = (oHint.name || 'Mutation') + ' (' + oHint.operation + ': ' + oHint.json_path + ')';
+                oIcon.addEventListener('mouseenter', function() {
+                    {$funcPrefix}_toggleMutationHighlight(oNode, true);
+                });
+                oIcon.addEventListener('mouseleave', function() {
+                    {$funcPrefix}_toggleMutationHighlight(oNode, false);
+                });
+                oIcons.appendChild(oIcon);
+            });
+        }
+
+        function {$funcPrefix}_scheduleMutationHints(oEditor) {
+            if (!oEditor) {
+                return;
+            }
+            clearTimeout(oEditor._exfMutationHintsTimer);
+            oEditor._exfMutationHintsTimer = setTimeout(function() {
+                if (oEditor.getMode() !== 'tree') {
+                    return;
+                }
+                var sTargetUid = $targetUidJs;
+                if (!sTargetUid) {
+                    oEditor._exfMutationHints = [];
+                    {$funcPrefix}_renderMutationHints(oEditor);
+                    return;
+                }
+
+                var iRequest = (oEditor._exfMutationHintsRequest || 0) + 1;
+                oEditor._exfMutationHintsRequest = iRequest;
+                var oUxon;
+                try {
+                    oUxon = oEditor.get();
+                } catch (oError) {
+                    return;
+                }
+                var oFormData = new URLSearchParams({
+                    action: 'exface.Core.UxonAutosuggest',
+                    input: 'mutation_hints',
+                    target_uid: sTargetUid,
+                    uxon: JSON.stringify(oUxon)
+                });
+                fetch('$ajaxUrl', {
+                    method: 'POST',
+                    mode: 'cors',
+                    cache: 'no-cache',
+                    headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+                    body: oFormData
+                })
+                .then(function(oResponse) {
+                    if (!oResponse.ok || oResponse.status !== 200) {
+                        throw new Error('Unexpected mutation-hint response.');
+                    }
+                    return oResponse.json();
+                })
+                .then(function(aHints) {
+                    if (oEditor._exfMutationHintsRequest !== iRequest) {
+                       return;
+                    }
+                    oEditor._exfMutationHints = Array.isArray(aHints) ? aHints : [];
+                    {$funcPrefix}_renderMutationHints(oEditor);
+                })
+                .catch(function(oError) {
+                    console.warn('Failed to load UXON mutation hints.', oError);
+                });
+            }, 300);
+        }
 JS;
     }
     
