@@ -25,6 +25,12 @@ commands or from model components like behaviors or even other actions.
 
 ## Component-specific development instructions
 
+Follow the general linked development documentation rule in
+[`copilot-instructions.md`](../copilot-instructions.md): inspect the action's class-level
+docblock for development documentation links, read them before changes, and update affected
+documentation afterward. This also applies when no separate instruction file exists and
+when the documentation is outside `Docs/Components/Actions`.
+
 Before modifying an action, inspect its class-level docblock for a linked instruction file under
 `Docs/Components/Actions`. If the docblock links such a file, read and follow it before making any
 changes. Treat these component instructions as additional constraints and keep them current when

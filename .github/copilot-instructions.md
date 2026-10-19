@@ -230,6 +230,23 @@ Most apps will have a `Docs` folder with markdown files. The core
 documentation has a handy table of contents in `Docs/sitemap.md`, which is a 
 good entry point to look through the docs.
 
+### Linked development documentation
+
+Before modifying a component, inspect its class-level docblock (or trait/interface docblock)
+for linked development documentation and instructions, especially sections labeled
+`Development documentation:` or `Development instructions:`. Resolve relative links from
+the source file's directory and read the linked files before making changes.
+
+This rule applies to all components, including actions, regardless of the documentation
+folder or filename. Documentation must be read even if the component has no separate
+instruction file; when both are linked, read both and follow the applicable instructions.
+
+After making changes, review the linked documentation and update every affected section
+to match the implementation, including behavior, contracts, examples, limitations, and
+validation guidance. Do not rewrite unaffected sections or claim unperformed validation.
+If a linked file cannot be found or read, report this explicitly rather than silently
+skipping it.
+
 ## Global rules
 
 - Every class must have a docblock. 

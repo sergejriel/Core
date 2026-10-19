@@ -56,8 +56,20 @@ use JsonPath\InvalidJsonPathException;
  * 
  * With `input` set to `mutation_hints`, the result is a list of enabled mutations with their
  * operation, configured JSONPath and concrete JSONEditor path.
+ * 
+ * # Technical Background
+ * 
+ * ## Mutation Links & Hints
+ * Uxon mutations are defined in the UXON schema and can be applied to UXON objects. 
+ * Each mutation has a name, an operation (append, insert, change, replace, remove, move), 
+ * and a JSONPath that defines where the mutation can be applied. 
+ * This action provides hints for these mutations 
+ * by returning the enabled mutations and their concrete target paths in the current UXON.
+ * 
+ * Development documentation:
+ * [mutation_links.documentation.md](../Docs/developer_docs/mutation_links/mutation_links.documentation.md)
  *
- * @author Andrej Kabachnik
+ * @author Andrej Kabachnik & Sergej Riel
  *
  */
 class UxonAutosuggest extends AbstractAction
