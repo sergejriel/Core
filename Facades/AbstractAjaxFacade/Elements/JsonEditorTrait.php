@@ -1004,6 +1004,126 @@ JS;
                         width: 300px;
                         height: 100px;
                     }
+                    .jsoneditor-modal.jsonPathView .jsonpath-fields {
+                        width: 680px;
+                        max-width: 80vw;
+                        color: #253449;
+                        font-size: 14px;
+                        line-height: 1.5;
+                    }
+                    .jsoneditor-modal.jsonPathView .jsonpath-row {
+                        padding: 16px;
+                        margin-bottom: 16px;
+                        border: 1px solid #d5dde7;
+                        border-radius: 8px;
+                        background: #f8fafc;
+                    }
+                    .jsoneditor-modal.jsonPathView .jsonpath-row-suggested {
+                        border-color: #93b8df;
+                        background: #f0f6fd;
+                    }
+                    .jsoneditor-modal.jsonPathView .jsonpath-heading {
+                        display: flex;
+                        flex-wrap: wrap;
+                        gap: 12px;
+                        align-items: center;
+                        justify-content: space-between;
+                    }
+                    .jsoneditor-modal.jsonPathView .jsonpath-heading label {
+                        font-size: 15px;
+                        font-weight: 600;
+                    }
+                    .jsoneditor-modal.jsonPathView .jsonpath-description {
+                        margin: 6px 0 12px;
+                        color: #526176;
+                    }
+                    .jsoneditor-modal.jsonPathView .jsonpath-fields textarea {
+                        display: block;
+                        width: 100%;
+                        height: 88px !important;
+                        margin: 0;
+                        padding: 10px;
+                        border: 1px solid #bcc9d8;
+                        border-radius: 5px;
+                        background: #fff;
+                        color: #253449;
+                        line-height: 1.6;
+                        overflow-wrap: anywhere;
+                        resize: vertical;
+                    }
+                    .jsoneditor-modal.jsonPathView .jsonpath-copy {
+                        display: inline-flex;
+                        gap: 7px;
+                        align-items: center;
+                        justify-content: center;
+                        height: auto;
+                        min-height: 36px;
+                        margin: 0;
+                        padding: 6px 14px;
+                        border: 1px solid #1763a6;
+                        border-radius: 5px;
+                        background: #fff;
+                        color: #14578f;
+                        font: inherit;
+                        font-weight: 600;
+                        cursor: pointer;
+                    }
+                    .jsoneditor-modal.jsonPathView .jsonpath-copy-primary {
+                        background: #1763a6;
+                        color: #fff;
+                    }
+                    .jsoneditor-modal.jsonPathView .jsonpath-copy:hover {
+                        background: #e1edfa;
+                    }
+                    .jsoneditor-modal.jsonPathView .jsonpath-copy-primary:hover {
+                        background: #104b80;
+                    }
+                    .jsoneditor-modal.jsonPathView .jsonpath-fields :focus-visible {
+                        outline: 3px solid #1763a6;
+                        outline-offset: 3px;
+                    }
+                    .jsoneditor-modal.jsonPathView .jsonpath-status {
+                        margin: 10px 0 0;
+                        color: #526176;
+                        font-size: 13px;
+                    }
+                    .jsoneditor-modal.jsonPathView .jsonpath-fields textarea.jsonpath-complex {
+                        border-color: #b42318;
+                        background: #fff6f5;
+                        color: #b42318;
+                    }
+                    .jsoneditor-modal.jsonPathView .jsonpath-warning {
+                        margin-top: 12px;
+                        padding: 12px;
+                        border-left: 4px solid #b42318;
+                        border-radius: 4px;
+                        background: #fff6f5;
+                        color: #8f1d16;
+                    }
+                    .jsoneditor-modal.jsonPathView .jsonpath-warning p {
+                        margin: 6px 0;
+                    }
+                    .jsoneditor-modal.jsonPathView .jsonpath-warning ul,
+                    .jsoneditor-modal.jsonPathView .jsonpath-help ul {
+                        padding-left: 22px;
+                        margin: 8px 0;
+                    }
+                    .jsoneditor-modal.jsonPathView .jsonpath-warning code {
+                        overflow-wrap: anywhere;
+                    }
+                    .jsoneditor-modal.jsonPathView .jsonpath-help {
+                        padding: 12px 16px;
+                        border: 1px solid #d5dde7;
+                        border-radius: 8px;
+                    }
+                    .jsoneditor-modal.jsonPathView .jsonpath-help summary {
+                        cursor: pointer;
+                        color: #14578f;
+                        font-weight: 600;
+                    }
+                    .jsoneditor-modal.jsonPathView .jsonpath-help li {
+                        margin-bottom: 8px;
+                    }
                     .jsoneditor-modal input:read-only,
 					.jsoneditor-modal textarea:read-only {
                         background-color:  #f5f5f5;
@@ -1212,6 +1332,33 @@ CSS;
             $onClickValueFunctionName = $funcPrefix . '_onClickValue';
             $presetHintHide = static::buildJsPresetHintHide($uxonEditorId);
             $trans = static::getTranslations($workbench);
+            $docsFacade = FacadeFactory::createFromAnything(DocsFacade::class, $workbench);
+            $jsonPathHelp = [
+                'indexed' => $trans['JSON_PATH.INDEXED'],
+                'suggested' => $trans['JSON_PATH.SUGGESTED'],
+                'help' => $trans['JSON_PATH.HELP_TITLE'],
+                'explanation' => $trans['JSON_PATH.HELP_TEXT'],
+                'indexedDescription' => $trans['JSON_PATH.INDEXED_DESCRIPTION'],
+                'suggestedDescription' => $trans['JSON_PATH.SUGGESTED_DESCRIPTION'],
+                'helpIdentifiers' => $trans['JSON_PATH.HELP_IDENTIFIERS'],
+                'helpFallback' => $trans['JSON_PATH.HELP_FALLBACK'],
+                'helpAvoid' => $trans['JSON_PATH.HELP_AVOID'],
+                'helpReview' => $trans['JSON_PATH.HELP_REVIEW'],
+                'helpNested' => $trans['JSON_PATH.HELP_NESTED'],
+                'warningTitle' => $trans['JSON_PATH.COMPLEX_TITLE'],
+                'warningText' => $trans['JSON_PATH.COMPLEX_TEXT'],
+                'warningLocations' => $trans['JSON_PATH.COMPLEX_LOCATIONS'],
+                'copyIndexed' => $trans['JSON_PATH.COPY_INDEXED'],
+                'copySuggested' => $trans['JSON_PATH.COPY_SUGGESTED'],
+                'statusIndices' => $trans['JSON_PATH.STATUS_INDICES'],
+                'statusFilters' => $trans['JSON_PATH.STATUS_FILTERS'],
+                'statusDirect' => $trans['JSON_PATH.STATUS_DIRECT'],
+                'readMore' => $trans['JSON_PATH.READ_MORE'],
+                'url' => $docsFacade->buildUrlToFacade() . '/exface/Core/Docs/JSONPath/index.md'
+            ];
+            $jsonPathHelpJs = json_encode(array_map(function ($text) {
+                return htmlspecialchars($text, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+            }, $jsonPathHelp), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT);
             
             return <<<JS
         
@@ -1433,38 +1580,67 @@ CSS;
         }
         
         function {$funcPrefix}_getJsonPathViewContent(){
+            var help = {$jsonPathHelpJs};
             var jsonPathViewContent =
-                '<div style="display:flex; gap:8px; align-items:center;">' +
-                '   <textarea id="jsonPathView" ' +
-                '      class="preset-path uxoneditor-input"' +
-                '      readonly> ' +
-                '   </textarea>' +
-                '   <div>' +
-                '      <button id="jsonPathCopyBtn" class="uxoneditor-btn" title="{$trans['CONTEXT_MENU.CLIPBOARD.COPY_HINT']}">' +
-                '         {$trans['CONTEXT_MENU.CLIPBOARD.COPY']}' +
-                '       </button>' +
+                '<div class="jsonpath-fields">' +
+                '   <div class="jsonpath-row">' +
+                '      <div class="jsonpath-heading">' +
+                '         <label for="jsonPathView">' + help.indexed + '</label>' +
+                '         <button type="button" id="jsonPathCopyBtn" data-jsonpath-copy="jsonPathView" class="uxoneditor-btn jsonpath-copy">' +
+                '            <i class="fa fa-clipboard" aria-hidden="true"></i> ' + help.copyIndexed +
+                '         </button>' +
+                '      </div>' +
+                '      <p id="jsonPathIndexedDescription" class="jsonpath-description">' + help.indexedDescription + '</p>' +
+                '      <textarea id="jsonPathView" class="preset-path uxoneditor-input" aria-describedby="jsonPathIndexedDescription" readonly spellcheck="false"></textarea>' +
                 '   </div>' +
+                '   <div class="jsonpath-row jsonpath-row-suggested">' +
+                '      <div class="jsonpath-heading">' +
+                '         <label for="jsonPathSuggestedView">' + help.suggested + '</label>' +
+                '         <button type="button" data-jsonpath-copy="jsonPathSuggestedView" class="uxoneditor-btn jsonpath-copy jsonpath-copy-primary">' +
+                '            <i class="fa fa-clipboard" aria-hidden="true"></i> ' + help.copySuggested +
+                '         </button>' +
+                '      </div>' +
+                '      <p id="jsonPathSuggestedDescription" class="jsonpath-description">' + help.suggestedDescription + '</p>' +
+                '      <textarea id="jsonPathSuggestedView" class="preset-path uxoneditor-input" aria-describedby="jsonPathSuggestedDescription jsonPathStatus" readonly spellcheck="false"></textarea>' +
+                '      <p id="jsonPathStatus" class="jsonpath-status" role="status"></p>' +
+                '      <div id="jsonPathWarning" class="jsonpath-warning" role="note" hidden>' +
+                '         <strong><i class="fa fa-exclamation-triangle" aria-hidden="true"></i> ' + help.warningTitle + '</strong>' +
+                '         <p>' + help.warningText + '</p>' +
+                '         <p>' + help.warningLocations + '</p><ul class="jsonpath-warning-locations"></ul>' +
+                '      </div>' +
+                '   </div>' +
+                '   <details class="jsonpath-help">' +
+                '      <summary><i class="fa fa-info-circle" aria-hidden="true"></i> ' + help.help + '</summary>' +
+                '      <p>' + help.explanation + '</p>' +
+                '      <ul>' +
+                '         <li>' + help.helpIdentifiers + '</li>' +
+                '         <li>' + help.helpFallback + '</li>' +
+                '         <li>' + help.helpAvoid + '</li>' +
+                '         <li>' + help.helpReview + '</li>' +
+                '         <li>' + help.helpNested + '</li>' +
+                '      </ul>' +
+                '      <a href="' + help.url + '" target="_blank" rel="noopener noreferrer">' + help.readMore + '</a>' +
+                '   </details>' +
                 '</div>';
             return jsonPathViewContent;
         }
         
         function {$funcPrefix}_initJsonPathCopy(modal){
-            var pathView = modal.modalElem().querySelector('#jsonPathView');
-            var pathViewCopyBtn = modal.modalElem().querySelector('#jsonPathCopyBtn');
-            if (!pathView || !pathViewCopyBtn) return;
-        
-            pathViewCopyBtn.addEventListener('click', async function () {
-                var text = pathView.value || '';
-                
-                exfTools.clipboard.copyText(text);
-                
-                // TODO: This is a Eui specific message popup implementation. 
-                //  Change it after the refactoring of this trait so that it can be used in other facades as well.
-                $.messager.show({
-                    title: "{$trans['JSON_PATH']}",
-                    msg: "{$trans['CONTEXT_MENU.CLIPBOARD.COPY_SUCCESS']}",
-                    timeout: 2000,
-                    showType: 'slide'
+            var modalElem = modal.modalElem();
+            modalElem.querySelectorAll('[data-jsonpath-copy]').forEach(function(button) {
+                var pathView = modalElem.querySelector('#' + button.getAttribute('data-jsonpath-copy'));
+                if (!pathView) return;
+
+                button.addEventListener('click', function () {
+                    exfTools.clipboard.copyText(pathView.value || '');
+
+                    // TODO: Replace this Eui-specific notification when refactoring the trait.
+                    $.messager.show({
+                        title: "{$trans['JSON_PATH']}",
+                        msg: "{$trans['CONTEXT_MENU.CLIPBOARD.COPY_SUCCESS']}",
+                        timeout: 2000,
+                        showType: 'slide'
+                    });
                 });
             });
         }
@@ -1509,6 +1685,61 @@ CSS;
             });
             return str;
         }
+        // Build paths against the actual JSON so numeric object keys are not mistaken for array indices.
+        function {$funcPrefix}_buildJsonPath(aPath, root, useFilters, details){
+            var path = '$';
+            var current = root;
+            details = details || {};
+            details.complexFilters = [];
+            details.indexCount = 0;
+            details.filterCount = 0;
+            aPath.forEach(function(crumb, position) {
+                var selected = current == null ? undefined : current[crumb];
+                if (Array.isArray(current)) {
+                    var filter = '';
+                    if (useFilters && selected !== null && typeof selected === 'object' && !Array.isArray(selected)) {
+                        // Deliberately exclude widget_type, caption and compound filters.
+                        ['id', 'attribute_alias'].some(function(key) {
+                            if (!Object.prototype.hasOwnProperty.call(selected, key)) return false;
+                            var value = selected[key];
+                            if (!((typeof value === 'string' && value.trim() !== '') ||
+                                (typeof value === 'number' && Number.isFinite(value)))) return false;
+                            var literal = JSON.stringify(value);
+                            // The UXON JSONPath engine does not decode escaped literals or protect operators inside strings.
+                            if (typeof value === 'string' && (literal !== '"' + value + '"' ||
+                                /[()\[\]<>=!~&|]/.test(value) || /\s(?:and|or)\s/.test(value))) return false;
+                            var matches = current.filter(function(sibling) {
+                                // JSONPath engines may coerce scalar types: reject those duplicates too.
+                                return sibling !== null && typeof sibling === 'object' &&
+                                    Object.prototype.hasOwnProperty.call(sibling, key) && sibling[key] == value;
+                            });
+                            if (matches.length !== 1) return false;
+                            filter = '[?(@.' + key + '==' + literal + ')]';
+                            if (key === 'attribute_alias' && typeof value === 'string' &&
+                                (value.length > 64 || value.split('__').length > 3)) {
+                                details.complexFilters.push({
+                                    alias: value,
+                                    location: {$funcPrefix}_buildJsonPath(aPath.slice(0, position + 1), root, false)
+                                });
+                            }
+                            return true;
+                        });
+                    }
+                    path += filter || '[' + crumb + ']';
+                    if (filter) {
+                        details.filterCount++;
+                    } else {
+                        details.indexCount++;
+                    }
+                } else {
+                    var key = String(crumb);
+                    path += /^[A-Za-z_][A-Za-z0-9_]*$/.test(key) ? '.' + key : '[' + JSON.stringify(key) + ']';
+                }
+                current = selected;
+            });
+            return path;
+        }
+
         function {$funcPrefix}_convertToArrayPath(jsonPathString){
             let aSplit = jsonPathString.split('.');
             let aPath = [];
@@ -1626,11 +1857,35 @@ CSS;
         }
         
         function {$funcPrefix}_loadJsonPathView(oModal, oNode){
-            // get node path tree
-            var oShowPathElem = document.getElementById('jsonPathView');
+            var modalElem = oModal.modalElem();
+            var oShowPathElem = modalElem.querySelector('#jsonPathView');
+            var oSuggestedPathElem = modalElem.querySelector('#jsonPathSuggestedView');
             var aPath = oNode.getPath();
-            oShowPathElem.value = {$funcPrefix}_convertToJsonPath(aPath);
+            var root = oNode.editor.get();
+            var details = {};
+            oShowPathElem.value = {$funcPrefix}_buildJsonPath(aPath, root, false);
+            oSuggestedPathElem.value = {$funcPrefix}_buildJsonPath(aPath, root, true, details);
             oShowPathElem.title = oNode.editor.options.name + (aPath.length > 0 ? ' > ' : '') + aPath.join(' > ');
+            oSuggestedPathElem.title = oShowPathElem.title;
+            var hasComplexFilters = details.complexFilters.length > 0;
+            oSuggestedPathElem.classList.toggle('jsonpath-complex', hasComplexFilters);
+            oSuggestedPathElem.setAttribute('aria-describedby', 'jsonPathSuggestedDescription jsonPathStatus' +
+                (hasComplexFilters ? ' jsonPathWarning' : ''));
+            var warning = modalElem.querySelector('#jsonPathWarning');
+            warning.hidden = !hasComplexFilters;
+            var locations = warning.querySelector('.jsonpath-warning-locations');
+            locations.textContent = '';
+            details.complexFilters.forEach(function(filter) {
+                var item = document.createElement('li');
+                var code = document.createElement('code');
+                code.textContent = filter.location;
+                item.appendChild(code);
+                locations.appendChild(item);
+            });
+            var status = modalElem.querySelector('#jsonPathStatus');
+            var statusLabels = {$jsonPathHelpJs};
+            status.textContent = details.indexCount > 0 ? statusLabels.statusIndices :
+                (details.filterCount > 0 ? statusLabels.statusFilters : statusLabels.statusDirect);
         }
         
         function {$funcPrefix}_insertIntoArray(aTargetArray, iPosition, oObject){

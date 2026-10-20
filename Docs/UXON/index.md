@@ -11,6 +11,7 @@ In a nutshell, UXON declaratively describes, which widgets to place on a page (e
 - [Model aliases](UXON/Aliases.md) - connecting UXON to the meta model objects, attributes, prototypes, etc.
 - [Formulas](UXON/Formula_syntax.md) - calculating values on-the-fly like in Excel
 - [Other expressions](UXON/Expressions_and_formulas.md) - widget links, placeholders, etc.
+- [JSONPath](../JSONPath/index.md) - selecting UXON values and choosing durable array filters
 
 ## Referencing the metamodel (data)
 
