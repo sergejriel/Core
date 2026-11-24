@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "owner": "mk-j/php_xlsxwriter",
+  "version": "0.39",
+  "artifactEvidence": {
+    "commit": "67541cff96eab25563aa7fcecba33e03368fa464",
+    "tree": "63607eb9391b3c1944ddd1bdd5dac05fb879c309",
+    "files": [
+      {
+        "path": "LICENSE",
+        "url": "https://raw.githubusercontent.com/mk-j/PHP_XLSXWriter/67541cff96eab25563aa7fcecba33e03368fa464/LICENSE",
+        "gitBlob": "ea7b7f2ed1c2bd3dff14947a9a1fd302bdc01f57",
+        "sha256": "599662499a0fc6f33a535d3b04181f06da11994a469f7724f9bd337efd358a6e"
+      },
+      {
+        "path": "README.md",
+        "url": "https://raw.githubusercontent.com/mk-j/PHP_XLSXWriter/67541cff96eab25563aa7fcecba33e03368fa464/README.md",
+        "gitBlob": "231522149cbccd8c503915e87fd481bd10af1f9e",
+        "sha256": "0a1e9a304265c8cfdb2a8fb5df1ddb2a3bd54abb79f5a9534228c7c7af31b60c"
+      },
+      {
+        "path": "composer.json",
+        "url": "https://raw.githubusercontent.com/mk-j/PHP_XLSXWriter/67541cff96eab25563aa7fcecba33e03368fa464/composer.json",
+        "gitBlob": "9e09870829f0e7f69cb87032d2246c17ff17a4e9",
+        "sha256": "f6e36d8aa2aec76103640edb76fad641520e0e3d80e35298808fe62bb942347c"
+      },
+      {
+        "path": "testbench/README.txt",
+        "url": "https://raw.githubusercontent.com/mk-j/PHP_XLSXWriter/67541cff96eab25563aa7fcecba33e03368fa464/testbench/README.txt",
+        "gitBlob": "25d2b05e66e125160addcc4e28c643cae0fa8994",
+        "sha256": "7a303d36cc0b6aba1e086e0bc494e826f88d49a270f5c4f3c9cbbf22eebd7a81"
+      },
+      {
+        "path": "xlsxwriter.class.php",
+        "url": "https://raw.githubusercontent.com/mk-j/PHP_XLSXWriter/67541cff96eab25563aa7fcecba33e03368fa464/xlsxwriter.class.php",
+        "gitBlob": "39f9ce5841eabf5109919213797902796a7c0de6",
+        "sha256": "af50a690d25f45673d6e702714e830efa46ff6ed17543a4621af04f8ed02ce45"
+      }
+    ],
+    "adaptation": "core-column-options-v1",
+    "upstreamSourceSha256": "af50a690d25f45673d6e702714e830efa46ff6ed17543a4621af04f8ed02ce45",
+    "adaptedSourceSha256": "9d0f20f3206d1908dc981fa0c495bfe4ce7c287de51ba9f9ecd5f436cb5d34fb"
+  },
+  "packages": [],
+  "licenseReview": {
+    "strategy": "exact-embedded-originals",
+    "status": "required",
+    "upstreamTerms": [
+      {
+        "path": "LICENSE",
+        "sha256": "599662499a0fc6f33a535d3b04181f06da11994a469f7724f9bd337efd358a6e",
+        "text": "The MIT License (MIT)\n\nCopyright (c) 2013 Mark Jones\n\nPermission is hereby granted, free of charge, to any person obtaining a copy of\nthis software and associated documentation files (the \"Software\"), to deal in\nthe Software without restriction, including without limitation the rights to\nuse, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of\nthe Software, and to permit persons to whom the Software is furnished to do so,\nsubject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS\nFOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR\nCOPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER\nIN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN\nCONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.\n",
+        "bytesBase64": "VGhlIE1JVCBMaWNlbnNlIChNSVQpCgpDb3B5cmlnaHQgKGMpIDIwMTMgTWFyayBKb25lcwoKUGVybWlzc2lvbiBpcyBoZXJlYnkgZ3JhbnRlZCwgZnJlZSBvZiBjaGFyZ2UsIHRvIGFueSBwZXJzb24gb2J0YWluaW5nIGEgY29weSBvZgp0aGlzIHNvZnR3YXJlIGFuZCBhc3NvY2lhdGVkIGRvY3VtZW50YXRpb24gZmlsZXMgKHRoZSAiU29mdHdhcmUiKSwgdG8gZGVhbCBpbgp0aGUgU29mdHdhcmUgd2l0aG91dCByZXN0cmljdGlvbiwgaW5jbHVkaW5nIHdpdGhvdXQgbGltaXRhdGlvbiB0aGUgcmlnaHRzIHRvCnVzZSwgY29weSwgbW9kaWZ5LCBtZXJnZSwgcHVibGlzaCwgZGlzdHJpYnV0ZSwgc3VibGljZW5zZSwgYW5kL29yIHNlbGwgY29waWVzIG9mCnRoZSBTb2Z0d2FyZSwgYW5kIHRvIHBlcm1pdCBwZXJzb25zIHRvIHdob20gdGhlIFNvZnR3YXJlIGlzIGZ1cm5pc2hlZCB0byBkbyBzbywKc3ViamVjdCB0byB0aGUgZm9sbG93aW5nIGNvbmRpdGlvbnM6CgpUaGUgYWJvdmUgY29weXJpZ2h0IG5vdGljZSBhbmQgdGhpcyBwZXJtaXNzaW9uIG5vdGljZSBzaGFsbCBiZSBpbmNsdWRlZCBpbiBhbGwKY29waWVzIG9yIHN1YnN0YW50aWFsIHBvcnRpb25zIG9mIHRoZSBTb2Z0d2FyZS4KClRIRSBTT0ZUV0FSRSBJUyBQUk9WSURFRCAiQVMgSVMiLCBXSVRIT1VUIFdBUlJBTlRZIE9GIEFOWSBLSU5ELCBFWFBSRVNTIE9SCklNUExJRUQsIElOQ0xVRElORyBCVVQgTk9UIExJTUlURUQgVE8gVEhFIFdBUlJBTlRJRVMgT0YgTUVSQ0hBTlRBQklMSVRZLCBGSVRORVNTCkZPUiBBIFBBUlRJQ1VMQVIgUFVSUE9TRSBBTkQgTk9OSU5GUklOR0VNRU5ULiBJTiBOTyBFVkVOVCBTSEFMTCBUSEUgQVVUSE9SUyBPUgpDT1BZUklHSFQgSE9MREVSUyBCRSBMSUFCTEUgRk9SIEFOWSBDTEFJTSwgREFNQUdFUyBPUiBPVEhFUiBMSUFCSUxJVFksIFdIRVRIRVIKSU4gQU4gQUNUSU9OIE9GIENPTlRSQUNULCBUT1JUIE9SIE9USEVSV0lTRSwgQVJJU0lORyBGUk9NLCBPVVQgT0YgT1IgSU4KQ09OTkVDVElPTiBXSVRIIFRIRSBTT0ZUV0FSRSBPUiBUSEUgVVNFIE9SIE9USEVSIERFQUxJTkdTIElOIFRIRSBTT0ZUV0FSRS4K"
+      }
+    ],
+    "embeddedLicenseTexts": "original-files-collected",
+    "changes": [],
+    "warnings": []
+  },
+  "inventoryEntries": []
+}
