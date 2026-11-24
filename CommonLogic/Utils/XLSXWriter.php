@@ -17,9 +17,11 @@ class XLSXWriter
 	protected $title;
 	protected $subject;
 	protected $author;
+	protected $isRightToLeft;
 	protected $company;
 	protected $description;
 	protected $keywords = array();
+	protected $tempdir;
 	
 	protected $current_sheet;
 	protected $sheets = array();
@@ -29,14 +31,10 @@ class XLSXWriter
 
 	public function __construct()
 	{
-		if(!ini_get('date.timezone'))
-		{
-			//using date functions can kick out warning if this isn't set
-			date_default_timezone_set('UTC');
-		}
-		$this->addCellStyle($number_format='GENERAL', $style_string=null);
-		$this->addCellStyle($number_format='GENERAL', $style_string=null);
-		$this->addCellStyle($number_format='GENERAL', $style_string=null);
+		defined('ENT_XML1') or define('ENT_XML1',16);//for php 5.3, avoid fatal error
+		date_default_timezone_get() or date_default_timezone_set('UTC');//php.ini missing tz, avoid warning
+		is_writeable($this->tempFilename()) or self::log("Warning: tempdir ".sys_get_temp_dir()." not writeable, use ->setTempDir()");
+		class_exists('ZipArchive') or self::log("Error: ZipArchive class does not exist");
 		$this->addCellStyle($number_format='GENERAL', $style_string=null);
 	}
 
@@ -47,6 +45,7 @@ class XLSXWriter
 	public function setKeywords($keywords='') { $this->keywords=$keywords; }
 	public function setDescription($description='') { $this->description=$description; }
 	public function setTempDir($tempdir='') { $this->tempdir=$tempdir; }
+	public function setRightToLeft($isRightToLeft=false){ $this->isRightToLeft=$isRightToLeft; }
 
 	public function __destruct()
 	{
@@ -61,6 +60,13 @@ class XLSXWriter
 	{
 		$tempdir = !empty($this->tempdir) ? $this->tempdir : sys_get_temp_dir();
 		$filename = tempnam($tempdir, "xlsx_writer_");
+		if (!$filename) {
+			// If you are seeing this error, it's possible you may have too many open
+			// file handles. If you're creating a spreadsheet with many small inserts,
+			// it is possible to exceed the default 1024 open file handles. Run 'ulimit -a'
+			// and try increasing the 'open files' number with 'ulimit -n 8192'
+			throw new \Exception("Unable to create tempfile - check file handle limits?");
+		}
 		$this->temp_files[] = $filename;
 		return $filename;
 	}
@@ -141,6 +147,7 @@ class XLSXWriter
 			'freeze_columns' => $freeze_columns,
 			'finalized' => false,
 		);
+		$rightToLeftValue = $this->isRightToLeft ? 'true' : 'false';
 		$sheet = &$this->sheets[$sheet_name];
 		$tabselected = count($this->sheets) == 1 ? 'true' : 'false';//only first sheet is selected
 		$max_cell=XLSXWriter::xlsCell(self::EXCEL_2007_MAX_ROW, self::EXCEL_2007_MAX_COL);//XFE1048577
@@ -153,7 +160,7 @@ class XLSXWriter
 		$sheet->file_writer->write('<dimension ref="A1:' . $max_cell . '"/>');
 		$sheet->max_cell_tag_end = $sheet->file_writer->ftell();
 		$sheet->file_writer->write(  '<sheetViews>');
-		$sheet->file_writer->write(    '<sheetView colorId="64" defaultGridColor="true" rightToLeft="false" showFormulas="false" showGridLines="true" showOutlineSymbols="true" showRowColHeaders="true" showZeros="true" tabSelected="' . $tabselected . '" topLeftCell="A1" view="normal" windowProtection="false" workbookViewId="0" zoomScale="100" zoomScaleNormal="100" zoomScalePageLayoutView="100">');
+		$sheet->file_writer->write(    '<sheetView colorId="64" defaultGridColor="true" rightToLeft="'.$rightToLeftValue.'" showFormulas="false" showGridLines="true" showOutlineSymbols="true" showRowColHeaders="true" showZeros="true" tabSelected="' . $tabselected . '" topLeftCell="A1" view="normal" windowProtection="false" workbookViewId="0" zoomScale="100" zoomScaleNormal="100" zoomScalePageLayoutView="100">');
 		if ($sheet->freeze_rows && $sheet->freeze_columns) {
 			$sheet->file_writer->write(      '<pane ySplit="'.$sheet->freeze_rows.'" xSplit="'.$sheet->freeze_columns.'" topLeftCell="'.self::xlsCell($sheet->freeze_rows, $sheet->freeze_columns).'" activePane="bottomRight" state="frozen"/>');
 			$sheet->file_writer->write(      '<selection activeCell="'.self::xlsCell($sheet->freeze_rows, 0).'" activeCellId="0" pane="topRight" sqref="'.self::xlsCell($sheet->freeze_rows, 0).'"/>');
@@ -175,19 +182,15 @@ class XLSXWriter
 		$sheet->file_writer->write(  '</sheetViews>');
 		$sheet->file_writer->write(  '<cols>');
 		$i=0;
-		if (! empty($col_options)) {
-			foreach($col_options as $opt) {
-			    if (! is_array($opt)) {
-			        // Backward compatibility to $col_width array (upto version 0.37)
-			        $width = 'customWidth="true" width="'.floatval($opt).'"';
-			    } elseif ($opt['width'] !== null) {
-                    $width = 'customWidth="true" width="'.floatval($opt['width']).'"';
-			    } else {
-			        $width = 'customWidth="false" width="11.5"';
-			    }
-			    $hidden = $opt['hidden'] !== true ? 'false' : 'true';
-			    $collapsed = $opt['collapsed'] !== true ? 'false' : 'true';
-				$sheet->file_writer->write(  '<col collapsed="'.$collapsed.'" hidden="'.$hidden.'" max="'.($i+1).'" min="'.($i+1).'" style="0" '.$width.'/>');
+		if (!empty($col_options)) {
+			foreach ($col_options as $opt) {
+				if (!is_array($opt)) $opt = array('width' => $opt);
+				$width = isset($opt['width'])
+					? 'customWidth="true" width="'.floatval($opt['width']).'"'
+					: 'customWidth="false" width="11.5"';
+				$hidden = ($opt['hidden'] ?? false) === true ? 'true' : 'false';
+				$collapsed = ($opt['collapsed'] ?? false) === true ? 'true' : 'false';
+				$sheet->file_writer->write('<col collapsed="'.$collapsed.'" hidden="'.$hidden.'" max="'.($i+1).'" min="'.($i+1).'" style="0" '.$width.'/>');
 				$i++;
 			}
 		}
@@ -222,7 +225,7 @@ class XLSXWriter
 
 	public function writeSheetHeader($sheet_name, array $header_types, $options = null, array $columns = [])
 	{
-		if (empty($sheet_name) || empty($header_types) || !empty($this->sheets[$sheet_name]))
+		if (empty($sheet_name) || empty($header_types))
 			return;
 
 		$suppress_row = isset($options['suppress_row']) ? intval($options['suppress_row']) : false;
@@ -231,16 +234,13 @@ class XLSXWriter
 			self::log( "Warning! passing $suppress_row=false|true to writeSheetHeader() is deprecated, this will be removed in a future version." );
 			$suppress_row = intval($options);
 		}
-        $style = &$options;
-        
-        // Fallback to support the definition of an array of widths in the $options parameter (used upto version 0.37)
-        if ($options['widths'] !== null) {
-            $col_widths = (array)$options['widths'];
-            foreach ($col_widths as $nr => $width) {
-               $columns[$nr]['width'] = $width;
-            }
-        }
+		$style = &$options;
 
+		if (isset($options['widths'])) {
+			foreach ((array)$options['widths'] as $nr => $width) {
+				$columns[$nr]['width'] = $width;
+			}
+		}
 		$auto_filter = isset($options['auto_filter']) ? intval($options['auto_filter']) : false;
 		$freeze_rows = isset($options['freeze_rows']) ? intval($options['freeze_rows']) : false;
 		$freeze_columns = isset($options['freeze_columns']) ? intval($options['freeze_columns']) : false;
@@ -251,10 +251,10 @@ class XLSXWriter
 		{
 			$header_row = array_keys($header_types);      
 
-			$sheet->file_writer->write('<row collapsed="false" customFormat="false" customHeight="false" hidden="false" ht="12.1" outlineLevel="0" r="' . (1) . '">');
+			$sheet->file_writer->write('<row collapsed="false" customFormat="false" customHeight="false" hidden="false" ht="12.1" outlineLevel="0" r="' . ($sheet->row_count+1) . '">');
 			foreach ($header_row as $c => $v) {
 				$cell_style_idx = empty($style) ? $sheet->columns[$c]['default_cell_style'] : $this->addCellStyle( 'GENERAL', json_encode(isset($style[0]) ? $style[$c] : $style) );
-				$this->writeCell($sheet->file_writer, 0, $c, $v, $number_format_type='n_string', $cell_style_idx);
+				$this->writeCell($sheet->file_writer, $sheet->row_count, $c, $v, $number_format_type='n_string', $cell_style_idx);
 			}
 			$sheet->file_writer->write('</row>');
 			$sheet->row_count++;
@@ -267,7 +267,7 @@ class XLSXWriter
 		if (empty($sheet_name))
 			return;
 
-		self::initializeSheet($sheet_name);
+		$this->initializeSheet($sheet_name);
 		$sheet = &$this->sheets[$sheet_name];
 		if (count($sheet->columns) < count($row)) {
 			$default_column_types = $this->initializeColumnTypes( array_fill($from=0, $until=count($row), 'GENERAL') );//will map to n_auto
@@ -280,7 +280,7 @@ class XLSXWriter
 			$customHt = isset($row_options['height']) ? true : false;
 			$hidden = isset($row_options['hidden']) ? (bool)($row_options['hidden']) : false;
 			$collapsed = isset($row_options['collapsed']) ? (bool)($row_options['collapsed']) : false;
-			$sheet->file_writer->write('<row collapsed="'.($collapsed).'" customFormat="false" customHeight="'.($customHt).'" hidden="'.($hidden).'" ht="'.($ht).'" outlineLevel="0" r="' . ($sheet->row_count + 1) . '">');
+			$sheet->file_writer->write('<row collapsed="'.($collapsed ? 'true' : 'false').'" customFormat="false" customHeight="'.($customHt ? 'true' : 'false').'" hidden="'.($hidden ? 'true' : 'false').'" ht="'.($ht).'" outlineLevel="0" r="' . ($sheet->row_count + 1) . '">');
 		}
 		else
 		{
@@ -303,7 +303,7 @@ class XLSXWriter
 
 	public function countSheetRows($sheet_name = '')
 	{
-		$sheet_name = $sheet_name ?: $this->current_sheet;
+		$sheet_name = $sheet_name ? $sheet_name : $this->current_sheet;
 		return array_key_exists($sheet_name, $this->sheets) ? $this->sheets[$sheet_name]->row_count : 0;
 	}
 
@@ -382,7 +382,7 @@ class XLSXWriter
 		if (!is_scalar($value) || $value==='') { //objects, array, empty
 			$file->write('<c r="'.$cell_name.'" s="'.$cell_style_idx.'"/>');
 		} elseif (is_string($value) && $value[0]=='='){
-			$file->write('<c r="'.$cell_name.'" s="'.$cell_style_idx.'" t="s"><f>'.self::xmlspecialchars($value).'</f></c>');
+			$file->write('<c r="'.$cell_name.'" s="'.$cell_style_idx.'" t="s"><f>'.self::xmlspecialchars(ltrim($value, '=')).'</f></c>');
 		} elseif ($num_format_type=='n_date') {
 			$file->write('<c r="'.$cell_name.'" s="'.$cell_style_idx.'" t="n"><v>'.intval(self::convert_date_time($value)).'</v></c>');
 		} elseif ($num_format_type=='n_datetime') {
@@ -743,14 +743,15 @@ class XLSXWriter
 			$r = chr($n%26 + 0x41) . $r;
 		}
 		if ($absolute) {
-			return '$' . $r . '$' . ($row_number+1);			
+			return '$' . $r . '$' . ($row_number+1);
 		}
 		return $r . ($row_number+1);
 	}
 	//------------------------------------------------------------------
 	public static function log($string)
 	{
-		file_put_contents("php://stderr", date("Y-m-d H:i:s:").rtrim(is_array($string) ? json_encode($string) : $string)."\n");
+		//file_put_contents("php://stderr", date("Y-m-d H:i:s:").rtrim(is_array($string) ? json_encode($string) : $string)."\n");
+		error_log(date("Y-m-d H:i:s:").rtrim(is_array($string) ? json_encode($string) : $string)."\n");
 	}
 	//------------------------------------------------------------------
 	public static function sanitize_filename($filename) //http://msdn.microsoft.com/en-us/library/aa365247%28VS.85%29.aspx
@@ -766,7 +767,7 @@ class XLSXWriter
 		static $badchars  = '\\/?*:[]';
 		static $goodchars = '        ';
 		$sheetname = strtr($sheetname, $badchars, $goodchars);
-		$sheetname = substr($sheetname, 0, 31);
+		$sheetname = function_exists('mb_substr') ? mb_substr($sheetname, 0, 31) : substr($sheetname, 0, 31);
 		$sheetname = trim(trim(trim($sheetname),"'"));//trim before and after trimming single quotes
 		return !empty($sheetname) ? $sheetname : 'Sheet'.((rand()%900)+100);
 	}
@@ -776,7 +777,7 @@ class XLSXWriter
 		//note, badchars does not include \t\n\r (\x09\x0a\x0d)
 		static $badchars = "\x00\x01\x02\x03\x04\x05\x06\x07\x08\x0b\x0c\x0e\x0f\x10\x11\x12\x13\x14\x15\x16\x17\x18\x19\x1a\x1b\x1c\x1d\x1e\x1f\x7f";
 		static $goodchars = "                              ";
-		return strtr(htmlspecialchars($val ?? '', ENT_QUOTES | ENT_XML1), $badchars, $goodchars);//strtr appears to be faster than str_replace
+		return strtr(htmlspecialchars((string)$val, ENT_QUOTES | ENT_XML1 | ENT_SUBSTITUTE), $badchars, $goodchars);//strtr appears to be faster than str_replace
 	}
 	//------------------------------------------------------------------
 	public static function array_first_key(array $arr)
@@ -792,14 +793,14 @@ class XLSXWriter
 		if ($num_format=='GENERAL') return 'n_auto';
 		if ($num_format=='@') return 'n_string';
 		if ($num_format=='0') return 'n_numeric';
-		if (preg_match("/[H]{1,2}:[M]{1,2}/i", $num_format)) return 'n_datetime';
-		if (preg_match("/[M]{1,2}:[S]{1,2}/i", $num_format)) return 'n_datetime';
-		if (preg_match("/[Y]{2,4}/i", $num_format)) return 'n_date';
-		if (preg_match("/[D]{1,2}/i", $num_format)) return 'n_date';
-		if (preg_match("/[M]{1,2}/i", $num_format)) return 'n_date';
-		if (preg_match("/$/", $num_format)) return 'n_numeric';
-		if (preg_match("/%/", $num_format)) return 'n_numeric';
-		if (preg_match("/0/", $num_format)) return 'n_numeric';
+		if (preg_match('/[H]{1,2}:[M]{1,2}(?![^"]*+")/i', $num_format)) return 'n_datetime';
+		if (preg_match('/[M]{1,2}:[S]{1,2}(?![^"]*+")/i', $num_format)) return 'n_datetime';
+		if (preg_match('/[Y]{2,4}(?![^"]*+")/i', $num_format)) return 'n_date';
+		if (preg_match('/[D]{1,2}(?![^"]*+")/i', $num_format)) return 'n_date';
+		if (preg_match('/[M]{1,2}(?![^"]*+")/i', $num_format)) return 'n_date';
+		if (preg_match('/$(?![^"]*+")/', $num_format)) return 'n_numeric';
+		if (preg_match('/%(?![^"]*+")/', $num_format)) return 'n_numeric';
+		if (preg_match('/0(?![^"]*+")/', $num_format)) return 'n_numeric';
 		return 'n_auto';
 	}
 	//------------------------------------------------------------------
@@ -812,6 +813,7 @@ class XLSXWriter
 		else if ($num_format=='integer')  $num_format='0';
 		else if ($num_format=='date')     $num_format='YYYY-MM-DD';
 		else if ($num_format=='datetime') $num_format='YYYY-MM-DD HH:MM:SS';
+        else if ($num_format=='time')     $num_format='HH:MM:SS';
 		else if ($num_format=='price')    $num_format='#,##0.00';
 		else if ($num_format=='dollar')   $num_format='[$$-1009]#,##0.00;[RED]-[$$-1009]#,##0.00';
 		else if ($num_format=='euro')     $num_format='#,##0.00 [$€-407];[RED]-#,##0.00 [$€-407]';
@@ -884,9 +886,12 @@ class XLSXWriter
 		$mdays = array( 31, ($leap ? 29 : 28), 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 );
 
 		# Some boundary checks
-		if($year < $epoch || $year > 9999) return 0;
-		if($month < 1     || $month > 12)  return 0;
-		if($day < 1       || $day > $mdays[ $month - 1 ]) return 0;
+		if ($year!=0 || $month !=0 || $day!=0)
+		{
+			if($year < $epoch || $year > 9999) return 0;
+			if($month < 1     || $month > 12)  return 0;
+			if($day < 1       || $day > $mdays[ $month - 1 ]) return 0;
+		}
 
 		# Accumulate the number of days since the epoch.
 		$days = $day;    # Add days for current month

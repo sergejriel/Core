@@ -1,73 +1,81 @@
 [
-    {
-        "name": "npm-asset/echarts",
-        "version": "6.1.0",
-        "license": ["Apache-2.0"],
-        "license_link": [
-            "https://github.com/apache/echarts/blob/6.1.0/LICENSE"
+  {
+    "name": "npm-asset/echarts",
+    "version": "6.1.0",
+    "license": [
+      "Apache-2.0"
+    ],
+    "license_link": [
+      "https://github.com/apache/echarts/blob/6.1.0/LICENSE"
+    ],
+    "description": "Custom build of Apache ECharts for interactive charts",
+    "homepage": "https://echarts.apache.org/"
+  },
+  {
+    "name": "npm-asset/turf--helpers",
+    "version": "6.5.0",
+    "license": [
+      "MIT"
+    ],
+    "license_file": "exface/core/Facades/AbstractAjaxFacade/js/leaflet/LICENSE.txt",
+    "description": "Turf.js GeoJSON constructors and utility helpers bundled in the custom Leaflet turf.min.js.",
+    "homepage": "https://turfjs.org/"
+  },
+  {
+    "name": "npm-asset/turf--invariant",
+    "version": "6.5.0",
+    "license": [
+      "MIT"
+    ],
+    "license_file": "exface/core/Facades/AbstractAjaxFacade/js/leaflet/LICENSE.txt",
+    "description": "Turf.js GeoJSON validation and coordinate/geometry accessors bundled in the custom Leaflet turf.min.js.",
+    "homepage": "https://turfjs.org/"
+  },
+  {
+    "name": "npm-asset/turf--boolean-point-in-polygon",
+    "version": "6.5.0",
+    "license": [
+      "MIT"
+    ],
+    "license_file": "exface/core/Facades/AbstractAjaxFacade/js/leaflet/LICENSE.txt",
+    "description": "Turf.js point-in-polygon detection bundled in the custom Leaflet turf.min.js for drag-and-drop hit testing.",
+    "homepage": "https://turfjs.org/"
+  },
+  {
+    "name": "mk-j/php_xlsxwriter",
+    "version": "0.39",
+    "description": "Lightweight XLSX Excel Spreadsheet Writer in PHP",
+    "homepage": "https://github.com/mk-j/PHP_XLSXWriter",
+    "update": {
+      "schemaVersion": 1,
+      "provider": {
+        "type": "packagist",
+        "package": "mk-j/php_xlsxwriter"
+      },
+      "policy": "same-major",
+      "artifacts": {
+        "adapter": "php-source",
+        "files": [
+          {
+            "source": "xlsxwriter.class.php",
+            "target": "CommonLogic/Utils/XLSXWriter.php"
+          },
+          {
+            "source": "LICENSE",
+            "target": "CommonLogic/Utils/XLSXWriter.LICENSE.txt"
+          }
         ],
-        "description": "Custom build of Apache ECharts for interactive charts",
-        "homepage": "https://echarts.apache.org/"
-    },
-    {
-        "name": "npm-asset/turf--helpers",
-        "version": "6.5.0",
-        "license": ["MIT"],
-        "license_file": "exface/core/Facades/AbstractAjaxFacade/js/leaflet/LICENSE.txt",
-        "description": "Turf.js GeoJSON constructors and utility helpers bundled in the custom Leaflet turf.min.js.",
-        "homepage": "https://turfjs.org/"
-    },
-    {
-        "name": "npm-asset/turf--invariant",
-        "version": "6.5.0",
-        "license": ["MIT"],
-        "license_file": "exface/core/Facades/AbstractAjaxFacade/js/leaflet/LICENSE.txt",
-        "description": "Turf.js GeoJSON validation and coordinate/geometry accessors bundled in the custom Leaflet turf.min.js.",
-        "homepage": "https://turfjs.org/"
-    },
-    {
-        "name": "npm-asset/turf--boolean-point-in-polygon",
-        "version": "6.5.0",
-        "license": ["MIT"],
-        "license_file": "exface/core/Facades/AbstractAjaxFacade/js/leaflet/LICENSE.txt",
-        "description": "Turf.js point-in-polygon detection bundled in the custom Leaflet turf.min.js for drag-and-drop hit testing.",
-        "homepage": "https://turfjs.org/"
-    },
-    {
-        "name": "mk-j/php_xlsxwriter",
-        "version": "0.37",
-        "license": [
-	        "MIT"
-	    ],
-        "license_link": [
-        	"https://github.com/mk-j/PHP_XLSXWriter/blob/master/LICENSE"
-        ],
-        "description": "Lightweight XLSX Excel Spreadsheet Writer in PHP",
-        "homepage": "https://github.com/mk-j/PHP_XLSXWriter",
-        "update": {
-            "schemaVersion": 1,
-            "provider": {
-                "type": "packagist",
-                "package": "mk-j/php_xlsxwriter"
-            },
-            "policy": "same-major",
-            "artifacts": {
-                "adapter": "php-source",
-                "files": [
-                    {
-                        "source": "xlsxwriter.class.php",
-                        "target": "CommonLogic/Utils/XLSXWriter.php"
-                    },
-                    {
-                        "source": "LICENSE",
-                        "target": "CommonLogic/Utils/XLSXWriter.LICENSE.txt"
-                    }
-                ],
-                "evidence": {
-                    "packages": "CommonLogic/Utils/XLSXWriter.packages.json",
-                    "notices": "CommonLogic/Utils/XLSXWriter.NOTICES.txt"
-                }
-            }
+        "evidence": {
+          "packages": "CommonLogic/Utils/XLSXWriter.packages.json",
+          "notices": "CommonLogic/Utils/XLSXWriter.NOTICES.txt"
         }
-    }
+      }
+    },
+    "licenses": [
+      {
+        "name": "MIT",
+        "file": "exface/core/CommonLogic/Utils/XLSXWriter.LICENSE.txt"
+      }
+    ]
+  }
 ]
