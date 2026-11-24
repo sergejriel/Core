@@ -43,54 +43,30 @@
         	"https://github.com/mk-j/PHP_XLSXWriter/blob/master/LICENSE"
         ],
         "description": "Lightweight XLSX Excel Spreadsheet Writer in PHP",
-        "homepage": "https://github.com/mk-j/PHP_XLSXWriter"
-    }, 
-    {
-        "name": "npm-asset/mermaid",
-        "version": "12.2.0",
-        "licenses": [
-            {
-                "name": "MIT",
-                "file": "exface/core/Facades/AbstractAjaxFacade/js/mermaid/LICENSE.txt"
-            }
-        ],
-        "description": "Generation of diagrams like flowcharts or sequence diagrams from text in a similar manner as markdown",
-        "homepage": "https://mermaid.js.org/",
+        "homepage": "https://github.com/mk-j/PHP_XLSXWriter",
         "update": {
             "schemaVersion": 1,
             "provider": {
-                "type": "npm",
-                "package": "mermaid"
+                "type": "packagist",
+                "package": "mk-j/php_xlsxwriter"
             },
             "policy": "same-major",
             "artifacts": {
-                "adapter": "npm-dist",
-                "evidence": {
-                    "packages": "Facades/AbstractAjaxFacade/js/mermaid/bundled-packages.json",
-                    "notices": "Facades/AbstractAjaxFacade/js/mermaid/THIRD_PARTY_LICENSES.txt"
-                },
+                "adapter": "php-source",
                 "files": [
                     {
-                        "source": "dist/mermaid.min.js",
-                        "target": "Facades/AbstractAjaxFacade/js/mermaid/mermaid.min.js"
-                    },
-                    {
-                        "source": "dist/mermaid.min.js.map",
-                        "target": "Facades/AbstractAjaxFacade/js/mermaid/mermaid.min.js.map"
-                    },
-                    {
-                        "source": "package.json",
-                        "target": "Facades/AbstractAjaxFacade/js/mermaid/package.json"
-                    },
-                    {
-                        "source": "README.md",
-                        "target": "Facades/AbstractAjaxFacade/js/mermaid/README.md"
+                        "source": "xlsxwriter.class.php",
+                        "target": "CommonLogic/Utils/XLSXWriter.php"
                     },
                     {
                         "source": "LICENSE",
-                        "target": "Facades/AbstractAjaxFacade/js/mermaid/LICENSE.txt"
+                        "target": "CommonLogic/Utils/XLSXWriter.LICENSE.txt"
                     }
-                ]
+                ],
+                "evidence": {
+                    "packages": "CommonLogic/Utils/XLSXWriter.packages.json",
+                    "notices": "CommonLogic/Utils/XLSXWriter.NOTICES.txt"
+                }
             }
         }
     }
